@@ -38,6 +38,7 @@ type User = {
   name: string;
   timezone: string;
   locale: string;
+  isAdmin: boolean;
 };
 export const setupUser = async (user: User) => {
   //register user
@@ -62,5 +63,5 @@ export const setupUser = async (user: User) => {
     otpCode: verifyRequest!.otpCode,
   });
 
-  return { teamId, calendarSlug: authenticatedUser };
+  return { teamId, authenticatedUser };
 };

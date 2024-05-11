@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { createContext } from "./context";
 import { clearTokens, verifyAccessToken } from "../modules/auth/model";
+import db, { schema } from "../db/client";
+import { eq } from "drizzle-orm";
 const t = initTRPC.context<typeof createContext>().create();
 
 export const middleware = t.middleware;
@@ -25,4 +27,30 @@ const isUser = middleware(({ ctx: { req, res }, next }) => {
     });
   }
 });
+
+const isAdmin = middleware(async ({ ctx: { req }, next }) => {
+  try {
+    const { userId } = verifyAccessToken({ req });
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+    });
+    if (user?.isAdmin) {
+      return next({
+        ctx: {
+          user: { userId },
+        },
+      });
+    } else {
+      throw new trpcError({
+        code: "UNAUTHORIZED",
+      });
+    }
+  } catch (error) {
+    throw new trpcError({
+      code: "UNAUTHORIZED",
+    });
+  }
+});
+
 export const protectedProcedure = publicProcedure.use(isUser);
+export const adminProcedure = publicProcedure.use(isAdmin);
