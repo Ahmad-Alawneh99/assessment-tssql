@@ -28,13 +28,12 @@ const isUser = middleware(({ ctx: { req, res }, next }) => {
   }
 });
 
-const isAdmin = middleware(async ({ ctx: { req, res }, next }) => {
+const isAdmin = middleware(async ({ ctx: { req }, next }) => {
   try {
     const { userId } = verifyAccessToken({ req });
     const user = await db.query.users.findFirst({
       where: eq(schema.users.id, userId),
     });
-
     if (user?.isAdmin) {
       return next({
         ctx: {
@@ -47,7 +46,6 @@ const isAdmin = middleware(async ({ ctx: { req, res }, next }) => {
       });
     }
   } catch (error) {
-    clearTokens({ res });
     throw new trpcError({
       code: "UNAUTHORIZED",
     });

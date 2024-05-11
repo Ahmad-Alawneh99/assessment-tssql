@@ -1,4 +1,3 @@
-import type { FastifyRequest } from "fastify";
 import {
   adminProcedure,
   publicProcedure,
@@ -10,32 +9,15 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 
-type PlansRequest = FastifyRequest<{
-  Querystring: { planId: string };
-}>;
-
-const find = publicProcedure.query(async ({ ctx }) => {
-  const req = ctx.req as PlansRequest;
-  const planId = req.query.planId;
-
-  if (!planId) {
-    throw new trpcError({
-      code: "NOT_FOUND",
+const find = publicProcedure
+  .input(z.object({ planId: z.string() }))
+  .query(async ({ input }) => {
+    const plan = await db.query.plans.findFirst({
+      where: eq(schema.plans.id, input.planId),
     });
-  }
 
-  const plan = await db.query.plans.findFirst({
-    where: eq(schema.plans.id, planId),
+    return plan;
   });
-
-  if (!plan) {
-    throw new trpcError({
-      code: "NOT_FOUND",
-    });
-  }
-
-  return plan;
-});
 
 const create = adminProcedure
   .input(z.object({ name: z.string(), price: z.number() }))
